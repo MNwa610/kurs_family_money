@@ -1,0 +1,141 @@
+// Prisma schema — «Семейный бюджет»
+// User владеет семьёй (членами), справочниками и счетами.
+// Доходы/расходы привязаны к члену семьи и типам/категориям.
+
+// Клиент генерируется в обычную папку исходников (не в скрытый node_modules/.prisma).
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma-client"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+/// Пользователь системы (владелец данных бюджета)
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String /// хэш пароля (bcrypt)
+  name      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  familyMembers     FamilyMember[]
+  incomeTypes       IncomeType[]
+  expenseCategories ExpenseCategory[]
+  accounts          Account[]
+}
+
+/// Член семьи, от имени которого учитываются доходы и расходы
+model FamilyMember {
+  id        String   @id @default(uuid())
+  userId    String
+  name      String
+  /// Например: self, spouse, child
+  relation  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  incomes  Income[]
+  expenses Expense[]
+
+  @@index([userId])
+}
+
+/// Тип дохода (зарплата, подработка и т.д.) — в разрезе пользователя
+model IncomeType {
+  id        String   @id @default(uuid())
+  userId    String
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  incomes Income[]
+
+  @@unique([userId, name])
+  @@index([userId])
+}
+
+/// Категория расхода — в разрезе пользователя
+model ExpenseCategory {
+  id        String   @id @default(uuid())
+  userId    String
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expenses Expense[]
+
+  @@unique([userId, name])
+  @@index([userId])
+}
+
+/// Счёт / кошелёк (может быть несколько у одного пользователя)
+model Account {
+  id        String   @id @default(uuid())
+  userId    String
+  name      String
+  balance   Decimal  @default(0) @db.Decimal(15, 2)
+  currency  String   @default("RUB")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  incomes  Income[]
+  expenses Expense[]
+
+  @@index([userId])
+}
+
+/// Запись о доходе
+model Income {
+  id          String   @id @default(uuid())
+  amount      Decimal  @db.Decimal(15, 2)
+  /// Дата фактического поступления
+  occurredAt  DateTime @default(now())
+  description String?
+
+  familyMemberId String
+  incomeTypeId   String
+  /// Если null — без привязки к счёту
+  accountId      String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  familyMember FamilyMember @relation(fields: [familyMemberId], references: [id], onDelete: Cascade)
+  incomeType   IncomeType   @relation(fields: [incomeTypeId], references: [id], onDelete: Restrict)
+  account      Account?     @relation(fields: [accountId], references: [id], onDelete: SetNull)
+
+  @@index([familyMemberId])
+  @@index([incomeTypeId])
+  @@index([accountId])
+}
+
+/// Запись о расходе
+model Expense {
+  id          String   @id @default(uuid())
+  amount      Decimal  @db.Decimal(15, 2)
+  occurredAt  DateTime @default(now())
+  description String?
+
+  familyMemberId    String
+  expenseCategoryId String
+  accountId         String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  familyMember    FamilyMember    @relation(fields: [familyMemberId], references: [id], onDelete: Cascade)
+  expenseCategory ExpenseCategory @relation(fields: [expenseCategoryId], references: [id], onDelete: Restrict)
+  account         Account?        @relation(fields: [accountId], references: [id], onDelete: SetNull)
+
+  @@index([familyMemberId])
+  @@index([expenseCategoryId])
+  @@index([accountId])
+}
