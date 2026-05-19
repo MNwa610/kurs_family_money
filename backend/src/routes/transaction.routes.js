@@ -1,6 +1,6 @@
 import { Router } from 'express';
 
-import * as ctrl from '../controllers/familyMember.controller.js';
+import * as ctrl from '../controllers/transaction.controller.js';
 import { authMiddleware } from '../middleware/auth.middleware.js';
 import { asyncHandler } from '../utils/errors.js';
 
@@ -8,9 +8,5 @@ const router = Router();
 router.use(authMiddleware);
 
 router.get('/', asyncHandler(ctrl.list));
-router.post('/', asyncHandler(ctrl.create));
-router.get('/:id', asyncHandler(ctrl.getOne));
-router.patch('/:id', asyncHandler(ctrl.update));
-router.delete('/:id', asyncHandler(ctrl.remove));
 
 export default router;

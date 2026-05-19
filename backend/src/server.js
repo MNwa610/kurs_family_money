@@ -1,6 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import { assertEnv, env } from './config/env.js';
+import { errorMiddleware } from './middleware/error.middleware.js';
 import routes from './routes/index.js';
 
 function createApp() {
@@ -14,7 +15,6 @@ function createApp() {
       service: 'family-budget-api',
       health: '/health',
       apiBase: '/api',
-      hint: 'Регистрация и логин: POST /api/auth/register, POST /api/auth/login',
     });
   });
 
@@ -28,14 +28,14 @@ function createApp() {
     res.status(404).json({ message: 'Маршрут не найден' });
   });
 
+  app.use(errorMiddleware);
+
   return app;
 }
 
 async function main() {
   assertEnv();
-
   const app = createApp();
-
   app.listen(env.port, () => {
     console.log(`Сервер запущен на http://localhost:${env.port}`);
     console.log(`API: http://localhost:${env.port}/api`);
@@ -46,5 +46,5 @@ main().catch((err) => {
   console.error('Ошибка запуска сервера:', err);
   process.exit(1);
 });
-export { createApp };
 
+export { createApp };
