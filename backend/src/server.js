@@ -36,9 +36,10 @@ function createApp() {
 async function main() {
   assertEnv();
   const app = createApp();
-  app.listen(env.port, () => {
-    console.log(`Сервер запущен на http://localhost:${env.port}`);
-    console.log(`API: http://localhost:${env.port}/api`);
+  const host = process.env.HOST ?? '0.0.0.0';
+  app.listen(env.port, host, () => {
+    console.log(`Сервер запущен на http://${host}:${env.port}`);
+    console.log(`API: http://${host}:${env.port}/api`);
   });
 }
 
