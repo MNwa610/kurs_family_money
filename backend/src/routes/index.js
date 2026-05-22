@@ -2,7 +2,11 @@ import { Router } from 'express';
 
 import accountRoutes from './account.routes.js';
 import authRoutes from './auth.routes.js';
+import budgetRoutes from './budget.routes.js';
 import dashboardRoutes from './dashboard.routes.js';
+import householdRoutes from './household.routes.js';
+import notificationsRoutes from './notifications.routes.js';
+import recurringRoutes from './recurring.routes.js';
 import expenseRoutes from './expense.routes.js';
 import expenseCategoryRoutes from './expenseCategory.routes.js';
 import familyMemberRoutes from './familyMember.routes.js';
@@ -18,15 +22,27 @@ router.get('/', (_req, res) => {
     service: 'family-budget-api',
     version: '1.0',
     endpoints: {
-      auth: ['POST /api/auth/register', 'POST /api/auth/login', 'GET /api/auth/me'],
+      auth: ['POST /api/auth/register', 'POST /api/auth/login', 'GET /api/auth/me', 'PATCH /api/auth/me'],
       dashboard: ['GET /api/dashboard?month=YYYY-MM'],
       transactions: ['GET /api/transactions'],
       reports: ['GET /api/reports/summary', 'GET /api/reports/export'],
+      household: [
+        'POST /api/household/create',
+        'GET /api/household',
+        'POST /api/household/invites',
+        'POST /api/household/invites/accept',
+      ],
+      budgets: ['GET /api/budgets', 'PUT /api/budgets'],
+      recurring: ['GET /api/recurring', 'POST /api/recurring'],
     },
   });
 });
 
 router.use('/auth', authRoutes);
+router.use('/household', householdRoutes);
+router.use('/notifications', notificationsRoutes);
+router.use('/budgets', budgetRoutes);
+router.use('/recurring', recurringRoutes);
 router.use('/family-members', familyMemberRoutes);
 router.use('/accounts', accountRoutes);
 router.use('/income-types', incomeTypeRoutes);

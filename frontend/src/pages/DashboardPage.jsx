@@ -183,12 +183,31 @@ export default function DashboardPage() {
                 </PieChart>
               </ResponsiveContainer>
               <div style={{ marginTop: 8 }}>
-                {expenseByCategory.slice(0, 4).map((c) => (
-                  <div key={c.name} className="legend-item">
-                    <span className="legend-item__dot" style={{ background: c.color }} />
-                    <span>
-                      {c.name} — {totalExpenses > 0 ? Math.round((c.value / totalExpenses) * 100) : 0}%
-                    </span>
+                {expenseByCategory.slice(0, 6).map((c) => (
+                  <div key={c.name} className="legend-item legend-item--stacked">
+                    <div className="legend-item__row">
+                      <span className="legend-item__dot" style={{ background: c.color }} />
+                      <span>
+                        {c.name} — {formatMoneyPlain(c.value)}
+                        {c.limit != null && (
+                          <span style={{ color: c.limitPercent > 100 ? 'var(--expense)' : 'var(--text-secondary)' }}>
+                            {' '}/ лимит {formatMoneyPlain(c.limit)}
+                            {c.limitPercent != null ? ` (${c.limitPercent}%)` : ''}
+                          </span>
+                        )}
+                      </span>
+                    </div>
+                    {c.limitPercent != null && (
+                      <div className="progress-bar progress-bar--sm">
+                        <div
+                          className="progress-bar__fill"
+                          style={{
+                            width: `${Math.min(c.limitPercent, 100)}%`,
+                            background: c.limitPercent > 100 ? 'var(--expense)' : 'var(--color-primary)',
+                          }}
+                        />
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>

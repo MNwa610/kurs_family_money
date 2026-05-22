@@ -16,7 +16,7 @@ const TYPE_FILTERS = [
 ];
 
 export default function TransactionsPage() {
-  const { openAddModal, refreshKey } = useOutletContext() ?? {};
+  const { openAddModal, openEditModal, refreshKey } = useOutletContext() ?? {};
   const { month } = useMonth();
   const [search, setSearch] = useState('');
   const [typeFilter, setTypeFilter] = useState('all');
@@ -166,7 +166,7 @@ export default function TransactionsPage() {
             <div className="date-group__label">{label}</div>
             <div className="transactions-list">
               {items.map((tx) => (
-                <TransactionRow key={tx.id} tx={tx} />
+                <TransactionRow key={tx.id} tx={tx} onEdit={openEditModal} />
               ))}
             </div>
           </section>

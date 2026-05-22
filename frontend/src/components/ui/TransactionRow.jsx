@@ -2,6 +2,7 @@ import {
   Briefcase,
   Car,
   Film,
+  Pencil,
   ShoppingCart,
   Wallet,
 } from 'lucide-react';
@@ -16,7 +17,7 @@ const icons = {
   briefcase: Briefcase,
 };
 
-export default function TransactionRow({ tx }) {
+export default function TransactionRow({ tx, onEdit }) {
   const Icon = icons[tx.icon] || Wallet;
   const isIncome = tx.type === 'income';
 
@@ -33,15 +34,22 @@ export default function TransactionRow({ tx }) {
         <div className="transaction-row__subtitle">{tx.subtitle}</div>
         {tx.meta && <div className="transaction-row__meta">{tx.meta}</div>}
       </div>
-      <div>
-        <div
-          className={`transaction-row__amount ${
-            isIncome ? 'transaction-row__amount--income' : 'transaction-row__amount--expense'
-          }`}
-        >
-          {formatMoney(tx.amount)}
+      <div className="transaction-row__aside">
+        <div>
+          <div
+            className={`transaction-row__amount ${
+              isIncome ? 'transaction-row__amount--income' : 'transaction-row__amount--expense'
+            }`}
+          >
+            {formatMoney(tx.amount)}
+          </div>
+          <div className="transaction-row__date">{tx.dateLabel}</div>
         </div>
-        <div className="transaction-row__date">{tx.dateLabel}</div>
+        {onEdit && (
+          <button type="button" className="btn btn--icon transaction-row__edit" onClick={() => onEdit(tx)} aria-label="Редактировать">
+            <Pencil size={16} />
+          </button>
+        )}
       </div>
     </article>
   );

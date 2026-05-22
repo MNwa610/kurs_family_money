@@ -7,21 +7,25 @@ const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
+  const [hasHousehold, setHasHousehold] = useState(false);
   const [loading, setLoading] = useState(true);
 
   const loadUser = useCallback(async () => {
     const token = getToken();
     if (!token) {
       setUser(null);
+      setHasHousehold(false);
       setLoading(false);
       return;
     }
     try {
-      const { user: me } = await api.fetchMe();
+      const { user: me, hasHousehold: inHousehold } = await api.fetchMe();
       setUser(me);
+      setHasHousehold(Boolean(inHousehold));
     } catch {
       clearToken();
       setUser(null);
+      setHasHousehold(false);
     } finally {
       setLoading(false);
     }
@@ -31,28 +35,72 @@ export function AuthProvider({ children }) {
     loadUser();
   }, [loadUser]);
 
-  const login = useCallback(async (email, password) => {
-    const { user: loggedIn, token } = await api.login(email, password);
-    setToken(token);
-    setUser(loggedIn);
-    return loggedIn;
+  const applyAuthResponse = useCallback((payload) => {
+    setToken(payload.token);
+    setUser(payload.user);
+    setHasHousehold(Boolean(payload.hasHousehold));
+    return payload.user;
   }, []);
 
+  const login = useCallback(async (email, password) => {
+    const payload = await api.login(email, password);
+    return applyAuthResponse(payload);
+  }, [applyAuthResponse]);
+
   const register = useCallback(async (email, password, name) => {
-    const { user: created, token } = await api.register(email, password, name);
-    setToken(token);
-    setUser(created);
-    return created;
-  }, []);
+    const payload = await api.register(email, password, name);
+    return applyAuthResponse(payload);
+  }, [applyAuthResponse]);
 
   const logout = useCallback(() => {
     clearToken();
     setUser(null);
+    setHasHousehold(false);
+  }, []);
+
+  const updateProfile = useCallback(async (body) => {
+    const { user: updated } = await api.updateProfile(body);
+    setUser(updated);
+    return updated;
+  }, []);
+
+  const createHousehold = useCallback(async (name) => {
+    const res = await api.createHousehold(name);
+    setHasHousehold(true);
+    return res;
+  }, []);
+
+  const joinHousehold = useCallback(async (token) => {
+    const res = await api.acceptHouseholdInvite(token);
+    setHasHousehold(true);
+    return res;
   }, []);
 
   const value = useMemo(
-    () => ({ user, loading, login, register, logout }),
-    [user, loading, login, register, logout],
+    () => ({
+      user,
+      hasHousehold,
+      loading,
+      login,
+      register,
+      logout,
+      updateProfile,
+      createHousehold,
+      joinHousehold,
+      refreshSession: loadUser,
+    }),
+    [
+      user,
+      hasHousehold,
+      loading,
+      login,
+      register,
+      logout,
+      updateProfile,
+      createHousehold,
+      joinHousehold,
+      loadUser,
+    ],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

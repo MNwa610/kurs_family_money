@@ -8,7 +8,7 @@ import {
 import { parseDateRange } from '../utils/dates.js';
 
 export async function getSummary(req, res) {
-  const userId = req.user.id;
+  const householdId = req.householdId;
   let from;
   let to;
   let month;
@@ -22,11 +22,11 @@ export async function getSummary(req, res) {
   }
 
   const [income, expense, byCategory, trend, weekly] = await Promise.all([
-    sumIncomes(userId, from, to),
-    sumExpenses(userId, from, to),
-    expensesByCategory(userId, from, to),
-    balanceTrendByDay(userId, from, to),
-    incomeVsExpenseByWeek(userId, from, to),
+    sumIncomes(householdId, from, to),
+    sumExpenses(householdId, from, to),
+    expensesByCategory(householdId, from, to),
+    balanceTrendByDay(householdId, from, to),
+    incomeVsExpenseByWeek(householdId, from, to),
   ]);
 
   const totalExpense = byCategory.reduce((s, c) => s + c.amount, 0);
@@ -60,7 +60,7 @@ function daysInRange(from, to) {
 }
 
 export async function exportSummary(req, res) {
-  const userId = req.user.id;
+  const householdId = req.householdId;
   let from;
   let to;
   try {
@@ -69,9 +69,9 @@ export async function exportSummary(req, res) {
     return res.status(400).json({ message: 'Некорректный период' });
   }
 
-  const byCategory = await expensesByCategory(userId, from, to);
-  const income = await sumIncomes(userId, from, to);
-  const expense = await sumExpenses(userId, from, to);
+  const byCategory = await expensesByCategory(householdId, from, to);
+  const income = await sumIncomes(householdId, from, to);
+  const expense = await sumExpenses(householdId, from, to);
 
   const lines = [
     'Отчёт «Семейный бюджет»',

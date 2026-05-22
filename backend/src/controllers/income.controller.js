@@ -1,9 +1,9 @@
 import { prisma } from '../lib/prisma.js';
 import {
   assertAccountOptional,
-  getFamilyMemberForUser,
-  getIncomeForUser,
-  getIncomeTypeForUser,
+  getFamilyMemberForHousehold,
+  getIncomeForHousehold,
+  getIncomeTypeForHousehold,
 } from '../lib/ownership.js';
 import { expenseInclude, incomeInclude, serializeIncome } from '../lib/serializers.js';
 import { parseAmount } from '../utils/decimal.js';
@@ -12,7 +12,7 @@ import { optionalString, requireId } from '../utils/validation.js';
 
 export async function list(req, res) {
   const { from, to } = req.query;
-  const where = { familyMember: { userId: req.user.id } };
+  const where = { familyMember: { householdId: req.householdId } };
   if (from || to) {
     where.occurredAt = {};
     if (from) where.occurredAt.gte = new Date(from);
@@ -35,7 +35,7 @@ export async function list(req, res) {
 }
 
 export async function create(req, res) {
-  const userId = req.user.id;
+  const householdId = req.householdId;
   const amount = parseAmount(req.body?.amount);
   const familyMemberId = requireId(req.body?.familyMemberId, 'familyMemberId');
   const incomeTypeId = requireId(req.body?.incomeTypeId, 'incomeTypeId');
@@ -43,9 +43,9 @@ export async function create(req, res) {
   const description = optionalString(req.body?.description);
   const occurredAt = parseOccurredAt(req.body?.occurredAt);
 
-  await getFamilyMemberForUser(userId, familyMemberId);
-  await getIncomeTypeForUser(userId, incomeTypeId);
-  await assertAccountOptional(userId, accountId);
+  await getFamilyMemberForHousehold(householdId, familyMemberId);
+  await getIncomeTypeForHousehold(householdId, incomeTypeId);
+  await assertAccountOptional(householdId, accountId);
 
   const row = await prisma.$transaction(async (tx) => {
     const created = await tx.income.create({
@@ -72,8 +72,8 @@ export async function create(req, res) {
 }
 
 export async function update(req, res) {
-  const userId = req.user.id;
-  const existing = await getIncomeForUser(userId, req.params.id);
+  const householdId = req.householdId;
+  const existing = await getIncomeForHousehold(householdId, req.params.id);
 
   const amount = req.body?.amount != null ? parseAmount(req.body.amount) : existing.amount;
   const familyMemberId = req.body?.familyMemberId ?? existing.familyMemberId;
@@ -86,9 +86,9 @@ export async function update(req, res) {
     ? parseOccurredAt(req.body.occurredAt)
     : existing.occurredAt;
 
-  await getFamilyMemberForUser(userId, familyMemberId);
-  await getIncomeTypeForUser(userId, incomeTypeId);
-  await assertAccountOptional(userId, accountId);
+  await getFamilyMemberForHousehold(householdId, familyMemberId);
+  await getIncomeTypeForHousehold(householdId, incomeTypeId);
+  await assertAccountOptional(householdId, accountId);
 
   const row = await prisma.$transaction(async (tx) => {
     if (existing.accountId) {
@@ -122,7 +122,7 @@ export async function update(req, res) {
 }
 
 export async function remove(req, res) {
-  const existing = await getIncomeForUser(req.user.id, req.params.id);
+  const existing = await getIncomeForHousehold(req.householdId, req.params.id);
 
   await prisma.$transaction(async (tx) => {
     if (existing.accountId) {

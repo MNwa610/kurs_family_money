@@ -1,10 +1,10 @@
 import { prisma } from '../lib/prisma.js';
-import { getFamilyMemberForUser } from '../lib/ownership.js';
+import { getFamilyMemberForHousehold } from '../lib/ownership.js';
 import { optionalString, requireString } from '../utils/validation.js';
 
 export async function list(req, res) {
   const members = await prisma.familyMember.findMany({
-    where: { userId: req.user.id },
+    where: { householdId: req.householdId },
     orderBy: { createdAt: 'asc' },
     select: {
       id: true,
@@ -18,7 +18,7 @@ export async function list(req, res) {
 }
 
 export async function getOne(req, res) {
-  const member = await getFamilyMemberForUser(req.user.id, req.params.id);
+  const member = await getFamilyMemberForHousehold(req.householdId, req.params.id);
   res.json({
     id: member.id,
     name: member.name,
@@ -34,7 +34,7 @@ export async function create(req, res) {
 
   const member = await prisma.familyMember.create({
     data: {
-      userId: req.user.id,
+      householdId: req.householdId,
       name,
       relation,
     },
@@ -50,7 +50,7 @@ export async function create(req, res) {
 }
 
 export async function update(req, res) {
-  await getFamilyMemberForUser(req.user.id, req.params.id);
+  await getFamilyMemberForHousehold(req.householdId, req.params.id);
   const name = req.body?.name != null ? requireString(req.body.name, 'name') : undefined;
   const relation = req.body?.relation !== undefined ? optionalString(req.body.relation) : undefined;
 
@@ -72,7 +72,7 @@ export async function update(req, res) {
 }
 
 export async function remove(req, res) {
-  const member = await getFamilyMemberForUser(req.user.id, req.params.id);
+  const member = await getFamilyMemberForHousehold(req.householdId, req.params.id);
   const opCount =
     (await prisma.income.count({ where: { familyMemberId: member.id } }))
     + (await prisma.expense.count({ where: { familyMemberId: member.id } }));

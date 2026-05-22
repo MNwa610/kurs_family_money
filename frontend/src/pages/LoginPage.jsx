@@ -5,7 +5,7 @@ import Button from '@/components/ui/Button.jsx';
 import { useAuth } from '@/context/AuthContext.jsx';
 
 export default function LoginPage() {
-  const { user, loading, login, register } = useAuth();
+  const { user, hasHousehold, loading, login, register } = useAuth();
   const [mode, setMode] = useState('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -14,7 +14,7 @@ export default function LoginPage() {
   const [submitting, setSubmitting] = useState(false);
 
   if (!loading && user) {
-    return <Navigate to="/" replace />;
+    return <Navigate to={hasHousehold ? '/' : '/setup'} replace />;
   }
 
   const handleSubmit = async (e) => {
@@ -39,8 +39,15 @@ export default function LoginPage() {
       <div className="auth-card card">
         <h1 className="auth-card__title">Семейный бюджет</h1>
         <p className="auth-card__subtitle">
-          {mode === 'login' ? 'Войдите в аккаунт' : 'Создайте аккаунт'}
+          {mode === 'login'
+            ? 'Войдите в аккаунт'
+            : 'Создайте аккаунт — семью настроите на следующем шаге'}
         </p>
+        {mode === 'login' && (
+          <p className="auth-card__demo-hint">
+            Демо: <strong>demo@family.local</strong> / <strong>demo1234</strong>
+          </p>
+        )}
 
         <form onSubmit={handleSubmit} className="auth-form">
           {mode === 'register' && (

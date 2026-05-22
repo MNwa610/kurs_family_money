@@ -20,8 +20,108 @@
 }
 
 .auth-card__subtitle {
-  margin: 0 0 24px;
+  margin: 0 0 8px;
   color: var(--text-secondary);
+}
+
+.auth-card__demo-hint {
+  margin: 0 0 24px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.4;
+}
+
+.setup-page .setup-card {
+  width: 100%;
+  max-width: 520px;
+  padding: 32px;
+}
+
+.setup-choice {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.setup-choice__btn {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 16px;
+  border: 2px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--bg-surface);
+  cursor: pointer;
+  text-align: left;
+  color: var(--text-primary);
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.setup-choice__btn:hover {
+  border-color: var(--color-primary);
+  background: var(--bg-surface-raised);
+}
+
+.setup-choice__btn--active {
+  border-color: var(--color-primary);
+  background: var(--color-primary-soft, rgba(59, 130, 246, 0.08));
+}
+
+.setup-choice__title {
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.setup-choice__hint {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.setup-invites {
+  margin-bottom: 20px;
+  padding: 16px;
+  border-radius: var(--radius-sm);
+  background: var(--bg-surface-raised);
+  border: 1px solid var(--border-light);
+}
+
+.setup-invites h3 {
+  margin: 0 0 12px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.setup-invites__item {
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border-light);
+}
+
+.setup-invites__item:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.setup-invites__item p {
+  margin: 0 0 4px;
+  font-size: 14px;
+}
+
+.setup-invites__meta {
+  font-size: 12px;
+  color: var(--text-secondary);
+  font-weight: 400;
+}
+
+.setup-invites__actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.setup-form {
+  margin-top: 8px;
 }
 
 .auth-form {
@@ -298,6 +398,138 @@
   color: var(--text-tertiary);
   text-align: right;
   margin-top: 4px;
+}
+
+.transaction-row__aside {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.transaction-row__edit {
+  opacity: 0.5;
+}
+
+.transaction-row:hover .transaction-row__edit {
+  opacity: 1;
+}
+
+.legend-item--stacked {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.legend-item__row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.progress-bar--sm {
+  height: 4px;
+}
+
+.settings-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+.settings-section h2 {
+  margin: 0 0 8px;
+  font-size: 20px;
+}
+
+.settings-section h3 {
+  margin: 0 0 12px;
+  font-size: 16px;
+}
+
+.settings-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.settings-list__item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border-light);
+}
+
+.settings-list__item--edit {
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.settings-list__actions {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.settings-member-relation {
+  color: var(--text-secondary);
+  font-weight: 400;
+}
+
+.settings-form--inline {
+  width: 100%;
+}
+
+.settings-form h4 {
+  margin: 0 0 8px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.settings-form__row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+}
+
+.settings-form__row .input,
+.settings-form__row .select {
+  flex: 1;
+  min-width: 140px;
+}
+
+.settings-msg {
+  padding: 12px 16px;
+  border-radius: var(--radius-sm);
+  margin-bottom: 16px;
+}
+
+.settings-msg--error {
+  background: var(--expense-bg);
+  color: var(--expense);
+}
+
+.settings-msg--ok {
+  background: var(--income-bg);
+  color: var(--income);
+}
+
+.settings-hint {
+  margin-top: 12px;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.settings-hint code {
+  font-size: 12px;
+  background: var(--bg-surface-raised);
+  padding: 2px 6px;
+  border-radius: 4px;
 }
 
 .badge {

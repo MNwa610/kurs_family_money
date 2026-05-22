@@ -15,69 +15,114 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  householdMembership HouseholdMember?
+  sentInvites       HouseholdInvite[] @relation("InvitedBy")
+}
+
+model Household {
+  id        String   @id @default(uuid())
+  name      String   @default("Моя семья")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  members           HouseholdMember[]
+  invites           HouseholdInvite[]
   familyMembers     FamilyMember[]
   incomeTypes       IncomeType[]
   expenseCategories ExpenseCategory[]
   accounts          Account[]
+  categoryBudgets   CategoryBudget[]
+  recurringPayments RecurringPayment[]
+}
+
+model HouseholdMember {
+  id          String   @id @default(uuid())
+  householdId String
+  userId      String   @unique
+  role        String   @default("member")
+  createdAt   DateTime @default(now())
+
+  household Household @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([householdId])
+}
+
+model HouseholdInvite {
+  id          String    @id @default(uuid())
+  householdId String
+  email       String
+  token       String    @unique
+  invitedById String
+  expiresAt   DateTime
+  acceptedAt  DateTime?
+  createdAt   DateTime  @default(now())
+
+  household Household @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  invitedBy User      @relation("InvitedBy", fields: [invitedById], references: [id], onDelete: Cascade)
+
+  @@index([householdId])
+  @@index([email])
 }
 
 model FamilyMember {
-  id        String   @id @default(uuid())
-  userId    String
-  name      String
-  relation  String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id          String   @id @default(uuid())
+  householdId String
+  name        String
+  relation    String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
-  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  incomes  Income[]
-  expenses Expense[]
+  household Household @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  incomes   Income[]
+  expenses  Expense[]
 
-  @@index([userId])
+  @@index([householdId])
 }
 
 model IncomeType {
-  id        String   @id @default(uuid())
-  userId    String
-  name      String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id          String   @id @default(uuid())
+  householdId String
+  name        String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
-  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  incomes Income[]
+  household Household @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  incomes   Income[]
 
-  @@unique([userId, name])
-  @@index([userId])
+  @@unique([householdId, name])
+  @@index([householdId])
 }
 
 model ExpenseCategory {
-  id        String   @id @default(uuid())
-  userId    String
-  name      String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id          String   @id @default(uuid())
+  householdId String
+  name        String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
-  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  expenses Expense[]
+  household       Household        @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  expenses        Expense[]
+  categoryBudgets CategoryBudget[]
 
-  @@unique([userId, name])
-  @@index([userId])
+  @@unique([householdId, name])
+  @@index([householdId])
 }
 
 model Account {
-  id        String   @id @default(uuid())
-  userId    String
-  name      String
-  balance   Decimal  @default(0) @db.Decimal(15, 2)
-  currency  String   @default("RUB")
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id          String   @id @default(uuid())
+  householdId String
+  name        String
+  balance     Decimal  @default(0) @db.Decimal(15, 2)
+  currency    String   @default("RUB")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
-  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  incomes  Income[]
-  expenses Expense[]
+  household Household @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  incomes   Income[]
+  expenses  Expense[]
 
-  @@index([userId])
+  @@index([householdId])
 }
 
 model Income {
@@ -122,4 +167,44 @@ model Expense {
   @@index([familyMemberId])
   @@index([expenseCategoryId])
   @@index([accountId])
+}
+
+model CategoryBudget {
+  id                String   @id @default(uuid())
+  householdId       String
+  expenseCategoryId String
+  month             String
+  limitAmount       Decimal  @db.Decimal(15, 2)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  household       Household       @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  expenseCategory ExpenseCategory @relation(fields: [expenseCategoryId], references: [id], onDelete: Cascade)
+
+  @@unique([householdId, expenseCategoryId, month])
+  @@index([householdId, month])
+}
+
+model RecurringPayment {
+  id                String   @id @default(uuid())
+  householdId       String
+  type              String
+  amount            Decimal  @db.Decimal(15, 2)
+  description       String?
+  familyMemberId    String
+  expenseCategoryId String?
+  incomeTypeId      String?
+  accountId         String?
+  frequency         String   @default("monthly")
+  dayOfMonth        Int?
+  dayOfWeek         Int?
+  nextRunAt         DateTime
+  isActive          Boolean  @default(true)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  household Household @relation(fields: [householdId], references: [id], onDelete: Cascade)
+
+  @@index([householdId])
+  @@index([nextRunAt, isActive])
 }

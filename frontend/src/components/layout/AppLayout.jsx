@@ -1,33 +1,57 @@
 import { useCallback, useState } from 'react';
 import { Outlet } from 'react-router-dom';
 
-import AddTransactionModal from '@/components/transactions/AddTransactionModal.jsx';
+import TransactionModal from '@/components/transactions/TransactionModal.jsx';
 import Sidebar from '@/components/layout/Sidebar.jsx';
 import TopBar from '@/components/layout/TopBar.jsx';
 
 export default function AppLayout() {
   const [modalOpen, setModalOpen] = useState(false);
+  const [editTransaction, setEditTransaction] = useState(null);
   const [refreshKey, setRefreshKey] = useState(0);
 
   const handleSaved = useCallback(() => {
     setRefreshKey((k) => k + 1);
     setModalOpen(false);
+    setEditTransaction(null);
+  }, []);
+
+  const openEdit = useCallback((tx) => {
+    setEditTransaction(tx);
+    setModalOpen(false);
+  }, []);
+
+  const openAdd = useCallback(() => {
+    setEditTransaction(null);
+    setModalOpen(true);
   }, []);
 
   return (
     <div className="app-shell">
       <Sidebar />
       <div className="main">
-        <TopBar onAddClick={() => setModalOpen(true)} />
+        <TopBar
+          onAddClick={openAdd}
+          refreshKey={refreshKey}
+          onNotificationsChanged={() => setRefreshKey((k) => k + 1)}
+        />
         <Outlet
           context={{
-            openAddModal: () => setModalOpen(true),
+            openAddModal: openAdd,
+            openEditModal: openEdit,
             refreshKey,
           }}
         />
       </div>
-      {modalOpen && (
-        <AddTransactionModal onClose={() => setModalOpen(false)} onSaved={handleSaved} />
+      {modalOpen && !editTransaction && (
+        <TransactionModal onClose={() => setModalOpen(false)} onSaved={handleSaved} />
+      )}
+      {editTransaction && (
+        <TransactionModal
+          transaction={editTransaction}
+          onClose={() => setEditTransaction(null)}
+          onSaved={handleSaved}
+        />
       )}
     </div>
   );

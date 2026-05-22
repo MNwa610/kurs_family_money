@@ -1,49 +1,51 @@
 import { prisma } from './prisma.js';
 import { decimalToJson } from '../utils/decimal.js';
 
-export async function getTotalBalance(userId) {
+const memberFilter = (householdId) => ({ familyMember: { householdId } });
+
+export async function getTotalBalance(householdId) {
   const agg = await prisma.account.aggregate({
-    where: { userId },
+    where: { householdId },
     _sum: { balance: true },
   });
   return decimalToJson(agg._sum.balance ?? 0);
 }
 
-export async function sumIncomes(userId, from, to) {
+export async function sumIncomes(householdId, from, to) {
   const agg = await prisma.income.aggregate({
     where: {
       occurredAt: { gte: from, lte: to },
-      familyMember: { userId },
+      ...memberFilter(householdId),
     },
     _sum: { amount: true },
   });
   return decimalToJson(agg._sum.amount ?? 0);
 }
 
-export async function sumExpenses(userId, from, to) {
+export async function sumExpenses(householdId, from, to) {
   const agg = await prisma.expense.aggregate({
     where: {
       occurredAt: { gte: from, lte: to },
-      familyMember: { userId },
+      ...memberFilter(householdId),
     },
     _sum: { amount: true },
   });
   return decimalToJson(agg._sum.amount ?? 0);
 }
 
-export async function expensesByCategory(userId, from, to) {
+export async function expensesByCategory(householdId, from, to) {
   const rows = await prisma.expense.groupBy({
     by: ['expenseCategoryId'],
     where: {
       occurredAt: { gte: from, lte: to },
-      familyMember: { userId },
+      ...memberFilter(householdId),
     },
     _sum: { amount: true },
   });
   if (rows.length === 0) return [];
 
   const categories = await prisma.expenseCategory.findMany({
-    where: { userId, id: { in: rows.map((r) => r.expenseCategoryId) } },
+    where: { householdId, id: { in: rows.map((r) => r.expenseCategoryId) } },
     select: { id: true, name: true },
   });
   const nameById = Object.fromEntries(categories.map((c) => [c.id, c.name]));
@@ -57,27 +59,35 @@ export async function expensesByCategory(userId, from, to) {
     .sort((a, b) => b.amount - a.amount);
 }
 
-export async function balanceTrendByDay(userId, from, to) {
+export async function getCategoryBudgets(householdId, month) {
+  const budgets = await prisma.categoryBudget.findMany({
+    where: { householdId, month },
+    include: { expenseCategory: { select: { id: true, name: true } } },
+  });
+  return budgets.map((b) => ({
+    categoryId: b.expenseCategoryId,
+    categoryName: b.expenseCategory.name,
+    month: b.month,
+    limit: decimalToJson(b.limitAmount),
+    id: b.id,
+  }));
+}
+
+export async function balanceTrendByDay(householdId, from, to) {
   const accounts = await prisma.account.findMany({
-    where: { userId },
+    where: { householdId },
     select: { balance: true },
   });
   const currentBalance = accounts.reduce((s, a) => s + Number(a.balance), 0);
 
   const [incomes, expenses] = await Promise.all([
     prisma.income.findMany({
-      where: {
-        occurredAt: { gte: from, lte: to },
-        familyMember: { userId },
-      },
+      where: { occurredAt: { gte: from, lte: to }, ...memberFilter(householdId) },
       select: { amount: true, occurredAt: true },
       orderBy: { occurredAt: 'asc' },
     }),
     prisma.expense.findMany({
-      where: {
-        occurredAt: { gte: from, lte: to },
-        familyMember: { userId },
-      },
+      where: { occurredAt: { gte: from, lte: to }, ...memberFilter(householdId) },
       select: { amount: true, occurredAt: true },
       orderBy: { occurredAt: 'asc' },
     }),
@@ -105,13 +115,13 @@ export async function balanceTrendByDay(userId, from, to) {
   });
 }
 
-export async function incomeVsExpenseByWeek(userId, from, to) {
+export async function incomeVsExpenseByWeek(householdId, from, to) {
   const incomes = await prisma.income.findMany({
-    where: { occurredAt: { gte: from, lte: to }, familyMember: { userId } },
+    where: { occurredAt: { gte: from, lte: to }, ...memberFilter(householdId) },
     select: { amount: true, occurredAt: true },
   });
   const expenses = await prisma.expense.findMany({
-    where: { occurredAt: { gte: from, lte: to }, familyMember: { userId } },
+    where: { occurredAt: { gte: from, lte: to }, ...memberFilter(householdId) },
     select: { amount: true, occurredAt: true },
   });
 

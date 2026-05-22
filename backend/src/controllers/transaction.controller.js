@@ -19,7 +19,7 @@ function formatDateLabel(date) {
 }
 
 export async function list(req, res) {
-  const userId = req.user.id;
+  const householdId = req.householdId;
   const type = req.query.type;
   const search = typeof req.query.search === 'string' ? req.query.search.trim().toLowerCase() : '';
   const limit = Math.min(Math.max(Number(req.query.limit) || 50, 1), 100);
@@ -40,12 +40,12 @@ export async function list(req, res) {
 
   const incomeWhere = {
     occurredAt: dateFilter,
-    familyMember: { userId },
+    familyMember: { householdId },
     ...memberFilter,
   };
   const expenseWhere = {
     occurredAt: dateFilter,
-    familyMember: { userId },
+    familyMember: { householdId },
     ...memberFilter,
   };
 

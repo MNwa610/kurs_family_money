@@ -1,6 +1,8 @@
+import { processDueRecurringPayments } from '../lib/recurring.js';
 import {
   balanceTrendByDay,
   expensesByCategory,
+  getCategoryBudgets,
   getTotalBalance,
   sumExpenses,
   sumIncomes,
@@ -10,7 +12,7 @@ import { expenseInclude, incomeInclude, serializeExpense, serializeIncome } from
 import { parseDateRange } from '../utils/dates.js';
 
 export async function getDashboard(req, res) {
-  const userId = req.user.id;
+  const householdId = req.householdId;
   let from;
   let to;
   let month;
@@ -23,21 +25,24 @@ export async function getDashboard(req, res) {
     return res.status(400).json({ message: 'Некорректный период (month=YYYY-MM)' });
   }
 
-  const [balance, income, expense, byCategory, trend, recentIncomes, recentExpenses] =
+  await processDueRecurringPayments(householdId);
+
+  const [balance, income, expense, byCategory, trend, budgets, recentIncomes, recentExpenses] =
     await Promise.all([
-      getTotalBalance(userId),
-      sumIncomes(userId, from, to),
-      sumExpenses(userId, from, to),
-      expensesByCategory(userId, from, to),
-      balanceTrendByDay(userId, from, to),
+      getTotalBalance(householdId),
+      sumIncomes(householdId, from, to),
+      sumExpenses(householdId, from, to),
+      expensesByCategory(householdId, from, to),
+      balanceTrendByDay(householdId, from, to),
+      getCategoryBudgets(householdId, month),
       prisma.income.findMany({
-        where: { occurredAt: { gte: from, lte: to }, familyMember: { userId } },
+        where: { occurredAt: { gte: from, lte: to }, familyMember: { householdId } },
         include: incomeInclude,
         orderBy: { occurredAt: 'desc' },
         take: 5,
       }),
       prisma.expense.findMany({
-        where: { occurredAt: { gte: from, lte: to }, familyMember: { userId } },
+        where: { occurredAt: { gte: from, lte: to }, familyMember: { householdId } },
         include: expenseInclude,
         orderBy: { occurredAt: 'desc' },
         take: 5,
@@ -51,16 +56,23 @@ export async function getDashboard(req, res) {
     .sort((a, b) => new Date(b.occurredAt) - new Date(a.occurredAt))
     .slice(0, 7);
 
+  const budgetByCategory = Object.fromEntries(budgets.map((b) => [b.categoryId, b.limit]));
   const totalExpense = byCategory.reduce((s, c) => s + c.amount, 0);
-  const expenseChart = byCategory.map((c, i) => ({
-    name: c.name,
-    value: c.amount,
-    color: ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#06B6D4', '#64748B'][i % 7],
-    percent: totalExpense > 0 ? Math.round((c.amount / totalExpense) * 100) : 0,
-  }));
+  const expenseChart = byCategory.map((c, i) => {
+    const limit = budgetByCategory[c.categoryId];
+    return {
+      name: c.name,
+      value: c.amount,
+      color: ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#06B6D4', '#64748B'][i % 7],
+      percent: totalExpense > 0 ? Math.round((c.amount / totalExpense) * 100) : 0,
+      limit,
+      limitPercent: limit > 0 ? Math.round((c.amount / limit) * 100) : null,
+    };
+  });
 
   res.json({
     month,
+    householdName: req.householdName,
     kpi: {
       balance,
       income,
@@ -69,6 +81,7 @@ export async function getDashboard(req, res) {
     },
     balanceTrend: trend,
     expenseByCategory: expenseChart,
+    categoryBudgets: budgets,
     recentTransactions: recent,
   });
 }

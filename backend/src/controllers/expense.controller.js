@@ -3,9 +3,9 @@ import { Decimal } from '@prisma/client/runtime/library.js';
 import { prisma } from '../lib/prisma.js';
 import {
   assertAccountOptional,
-  getExpenseCategoryForUser,
-  getExpenseForUser,
-  getFamilyMemberForUser,
+  getExpenseCategoryForHousehold,
+  getExpenseForHousehold,
+  getFamilyMemberForHousehold,
 } from '../lib/ownership.js';
 import { HttpError } from '../utils/errors.js';
 import { expenseInclude, serializeExpense } from '../lib/serializers.js';
@@ -15,7 +15,7 @@ import { optionalString, requireId } from '../utils/validation.js';
 
 export async function list(req, res) {
   const { from, to } = req.query;
-  const where = { familyMember: { userId: req.user.id } };
+  const where = { familyMember: { householdId: req.householdId } };
   if (from || to) {
     where.occurredAt = {};
     if (from) where.occurredAt.gte = new Date(from);
@@ -37,7 +37,7 @@ export async function list(req, res) {
 }
 
 export async function create(req, res) {
-  const userId = req.user.id;
+  const householdId = req.householdId;
   const amount = parseAmount(req.body?.amount);
   const familyMemberId = requireId(req.body?.familyMemberId, 'familyMemberId');
   const expenseCategoryId = requireId(req.body?.expenseCategoryId, 'expenseCategoryId');
@@ -45,9 +45,9 @@ export async function create(req, res) {
   const description = optionalString(req.body?.description);
   const occurredAt = parseOccurredAt(req.body?.occurredAt);
 
-  await getFamilyMemberForUser(userId, familyMemberId);
-  await getExpenseCategoryForUser(userId, expenseCategoryId);
-  const account = await assertAccountOptional(userId, accountId);
+  await getFamilyMemberForHousehold(householdId, familyMemberId);
+  await getExpenseCategoryForHousehold(householdId, expenseCategoryId);
+  const account = await assertAccountOptional(householdId, accountId);
   if (account) {
     const balance = account.balance instanceof Decimal ? account.balance : new Decimal(account.balance);
     if (balance.lessThan(amount)) {
@@ -80,8 +80,8 @@ export async function create(req, res) {
 }
 
 export async function update(req, res) {
-  const userId = req.user.id;
-  const existing = await getExpenseForUser(userId, req.params.id);
+  const householdId = req.householdId;
+  const existing = await getExpenseForHousehold(householdId, req.params.id);
 
   const amount = req.body?.amount != null ? parseAmount(req.body.amount) : existing.amount;
   const familyMemberId = req.body?.familyMemberId ?? existing.familyMemberId;
@@ -94,9 +94,9 @@ export async function update(req, res) {
     ? parseOccurredAt(req.body.occurredAt)
     : existing.occurredAt;
 
-  await getFamilyMemberForUser(userId, familyMemberId);
-  await getExpenseCategoryForUser(userId, expenseCategoryId);
-  const account = await assertAccountOptional(userId, accountId);
+  await getFamilyMemberForHousehold(householdId, familyMemberId);
+  await getExpenseCategoryForHousehold(householdId, expenseCategoryId);
+  const account = await assertAccountOptional(householdId, accountId);
   if (account) {
     let available = account.balance instanceof Decimal ? account.balance : new Decimal(account.balance);
     if (existing.accountId === accountId) {
@@ -139,7 +139,7 @@ export async function update(req, res) {
 }
 
 export async function remove(req, res) {
-  const existing = await getExpenseForUser(req.user.id, req.params.id);
+  const existing = await getExpenseForHousehold(req.householdId, req.params.id);
 
   await prisma.$transaction(async (tx) => {
     if (existing.accountId) {

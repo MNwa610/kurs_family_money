@@ -1,80 +1,76 @@
 import { prisma } from './prisma.js';
+import { HttpError } from '../utils/errors.js';
 
-export async function getFamilyMemberForUser(userId, familyMemberId) {
+function notFound() {
+  const err = new Error('NOT_FOUND');
+  throw err;
+}
+
+export async function getFamilyMemberForHousehold(householdId, familyMemberId) {
   const member = await prisma.familyMember.findFirst({
-    where: { id: familyMemberId, userId },
+    where: { id: familyMemberId, householdId },
   });
-  if (!member) {
-    const err = new Error('NOT_FOUND');
-    throw err;
-  }
+  if (!member) notFound();
   return member;
 }
 
-export async function getAccountForUser(userId, accountId) {
+export async function getAccountForHousehold(householdId, accountId) {
   const account = await prisma.account.findFirst({
-    where: { id: accountId, userId },
+    where: { id: accountId, householdId },
   });
-  if (!account) {
-    const err = new Error('NOT_FOUND');
-    throw err;
-  }
+  if (!account) notFound();
   return account;
 }
 
-export async function getIncomeTypeForUser(userId, incomeTypeId) {
+export async function getIncomeTypeForHousehold(householdId, incomeTypeId) {
   const row = await prisma.incomeType.findFirst({
-    where: { id: incomeTypeId, userId },
+    where: { id: incomeTypeId, householdId },
   });
-  if (!row) {
-    const err = new Error('NOT_FOUND');
-    throw err;
-  }
+  if (!row) notFound();
   return row;
 }
 
-export async function getExpenseCategoryForUser(userId, expenseCategoryId) {
+export async function getExpenseCategoryForHousehold(householdId, expenseCategoryId) {
   const row = await prisma.expenseCategory.findFirst({
-    where: { id: expenseCategoryId, userId },
+    where: { id: expenseCategoryId, householdId },
   });
-  if (!row) {
-    const err = new Error('NOT_FOUND');
-    throw err;
-  }
+  if (!row) notFound();
   return row;
 }
 
-export async function getIncomeForUser(userId, incomeId) {
+export async function getIncomeForHousehold(householdId, incomeId) {
   const row = await prisma.income.findFirst({
     where: {
       id: incomeId,
-      familyMember: { userId },
+      familyMember: { householdId },
     },
     include: { familyMember: true },
   });
-  if (!row) {
-    const err = new Error('NOT_FOUND');
-    throw err;
-  }
+  if (!row) notFound();
   return row;
 }
 
-export async function getExpenseForUser(userId, expenseId) {
+export async function getExpenseForHousehold(householdId, expenseId) {
   const row = await prisma.expense.findFirst({
     where: {
       id: expenseId,
-      familyMember: { userId },
+      familyMember: { householdId },
     },
     include: { familyMember: true },
   });
-  if (!row) {
-    const err = new Error('NOT_FOUND');
-    throw err;
-  }
+  if (!row) notFound();
   return row;
 }
 
-export async function assertAccountOptional(userId, accountId) {
+export async function assertAccountOptional(householdId, accountId) {
   if (!accountId) return null;
-  return getAccountForUser(userId, accountId);
+  return getAccountForHousehold(householdId, accountId);
+}
+
+export async function getRecurringForHousehold(householdId, id) {
+  const row = await prisma.recurringPayment.findFirst({
+    where: { id, householdId },
+  });
+  if (!row) throw new HttpError(404, 'Повторяющийся платёж не найден');
+  return row;
 }

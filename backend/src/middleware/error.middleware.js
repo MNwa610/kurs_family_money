@@ -5,6 +5,10 @@ import { mapValidationError } from '../utils/validation.js';
 export function errorMiddleware(err, req, res, next) {
   if (res.headersSent) return next(err);
 
+  if (err?.message === 'NOT_FOUND') {
+    return res.status(404).json({ message: 'Запись не найдена' });
+  }
+
   if (err instanceof HttpError) {
     const body = { message: err.message };
     if (err.details) body.details = err.details;

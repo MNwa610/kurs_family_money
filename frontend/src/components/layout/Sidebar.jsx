@@ -1,4 +1,4 @@
-import { LayoutDashboard, LogOut, PieChart, Receipt, Wallet } from 'lucide-react';
+import { LayoutDashboard, LogOut, PieChart, Receipt, Settings, Wallet } from 'lucide-react';
 import { NavLink, useNavigate } from 'react-router-dom';
 
 import { useAuth } from '@/context/AuthContext.jsx';
@@ -7,6 +7,7 @@ const links = [
   { to: '/', label: 'Главная', icon: LayoutDashboard, end: true },
   { to: '/transactions', label: 'Транзакции', icon: Receipt },
   { to: '/reports', label: 'Отчёты', icon: PieChart },
+  { to: '/settings', label: 'Настройки', icon: Settings },
 ];
 
 export default function Sidebar() {
